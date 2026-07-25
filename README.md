@@ -1,93 +1,78 @@
-# 🛒 Desafio Técnico: Módulo Fiscal & ERP Varejo
+# ERP Varejo API
 
-Bem-vindo(a) ao desafio técnico para a vaga de **Desenvolvedor(a) Java / Spring**!
+API RESTful para validacao fiscal de notas fiscais em sistema de ERP de varejo brasileiro.
 
-Neste desafio, você irá construir a API principal de um **ERP de Varejo**, responsável pela **autenticação de usuários**, **recebimento de dados de notas fiscais** e **validação/cálculo automatizado dos impostos brasileiros** (ICMS, PIS e COFINS).
+## Funcionalidades
 
----
-**Prazo:** você deve informar a entrevistadora (sugestão 3 dias úteis, mas se for antes, será considerado como diferencial)
-**Entrega:** Repositório público no GitHub (envie o link por e-mail ou WhatsApp)
+- Autenticacao JWT (login e controle de acesso)
+- Validacao fiscal de notas com multiplos itens
+- Calculo automatizado de ICMS, PIS e COFINS
+- Deteccao de divergencias entre impostos informados e calculados
+- Documentacao Swagger automatica
 
----
+## Stack
 
-## 🎯 Objetivo
-Construir uma aplicação **RESTful em Java + Spring Boot** que atue como um engine de validação fiscal para vendas no varejo. O sistema deve permitir login seguro (JWT) e dispor de um endpoint para processar uma Nota Fiscal (NFe/NFCe) com múltiplos itens, calculando e validando a alíquota e o valor dos impostos de acordo com o regime tributário e estado de origem/destino.
+| Tecnologia | Versao |
+|------------|--------|
+| Java | 17+ |
+| Maven | 3.9.6 |
+| Spring Boot | 3.2.5 |
+| Spring Security | 6.2.x (via Spring Boot) |
+| Spring Data JPA | 3.2.x (via Spring Boot) |
+| H2 Database | 2.2.x (via Spring Boot) |
+| jjwt (JWT) | 0.12.5 |
+| SpringDoc OpenAPI | 2.5.0 |
 
----
+## Como Executar
 
-## 👥 Tabela de Usuários para Teste (Autenticação JWT)
+### Requisitos
 
-A aplicação deve disponibilizar estes usuários previamente cadastrados (seja via script `data.sql`, `schema.sql` ou *seeder* no startup da aplicação).
+- Java 17 ou superior
+- Maven 3.6+
 
-| Nome | E-mail / Username | Senha em Texto Puro | Descrição |
-| :--- | :--- | :--- | :--- |
-| **Admin ERP** | `admin@erpvarejo.com` | `Admin@123`  | Acesso total ao sistema e gestão fiscal. |
-| **Operador Caixa 01** | `caixa01@erpvarejo.com` | `User@123` | Operador do PDV responsável pelo envio e validação das notas. |
-| **Operador Caixa 02** | `caixa02@erpvarejo.com` | `User@123` | Segundo operador para testes de autenticação/permissões. |
+### Passo a passo
 
----
+```bash
+# Clone o repositorio
+git clone https://github.com/kazuyabr/irrah-tech-challenges-fiscal.git
+cd irrah-tech-challenges-fiscal
 
-## 🏛️ Regras Fiscais Simplificadas do ERP
-
-No varejo brasileiro, o cálculo de impostos depende da categoria do produto e do fluxo de origem/destino da mercadoria.
-
-### 1. Base de Cálculo (BC):
-* **Base de Cálculo por Item** = `(Quantidade * Valor Unitário) - Desconto`
-* **Valor do Imposto** = `Base de Cálculo * (Alíquota / 100)`
-
-### 2. ICMS (Imposto sobre Circulação de Mercadorias e Serviços):
-* **Venda Interna** (Origem e Destino no mesmo Estado, ex: `PR` ➔ `PR`): Alíquota padrão de **18%**.
-* **Venda Interestadual** (Origem e Destino em Estados diferentes, ex: `PR` ➔ `RJ`): Alíquota interestadual de **12%**.
-* **Produtos da categoria `CESTA_BASICA`**: Isentos de ICMS (**0%**).
-
-### 3. PIS e COFINS (Regime Não-Cumulativo Varejo):
-* **PIS**: Alíquota padrão de **1,65%**.
-* **COFINS**: Alíquota padrão de **7,60%**.
-* **Produtos da categoria `BEBIDAS_ALCOOLICAS`** (Regime Monofásico no Varejo): Alíquotas de PIS e COFINS zeradas no PDV de saída (**0% PIS** e **0% COFINS**).
-
----
-
-## 📦 Massa de Dados e Cenários de Teste (6 Produtos)
-
-Abaixo estão os 6 produtos oficiais para testes de validação do endpoint.
-
-### 🟢 Grupo 1: Produtos com Impostos Corretos (Esperado: Status `APROVADA`)
-
-Estes produtos possuem a memória de cálculo exata e não devem apresentar nenhuma divergência.
-
-| Código | Produto | Categoria | Origem ➔ Destino | Qtd x Val. Unit (Desc) | Base de Cálculo | ICMS Inf. | PIS Inf. | COFINS Inf. | Status Esperado | Memória de Cálculo |
-| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **PROD-001** | Mouse USB Optico | `ELETRONICOS` | **PR ➔ RJ** | 1x R$ 10,00 (R$ 0,00) | **R$ 10,00** | R$ 1,20 | R$ 0,17 | R$ 0,76 | 🟢 OK | • ICMS (12% interestadual) = R$ 1,20<br>• PIS (1,65%) = R$ 0,165 ➔ R$ 0,17<br>• COFINS (7,60%) = R$ 0,76 |
-| **PROD-002** | Feijão Carioca 1kg | `CESTA_BASICA` | **PR ➔ PR** | 2x R$ 8,00 (R$ 1,00) | **R$ 15,00** | R$ 0,00 | R$ 0,25 | R$ 1,14 | 🟢 OK | • ICMS (Cesta Básica) = R$ 0,00<br>• PIS (1,65% de R$ 15) = R$ 0,2475 ➔ R$ 0,25<br>• COFINS (7,60% de R$ 15) = R$ 1,14 |
-| **PROD-003** | Cerveja IPA 500ml | `BEBIDAS_ALCOOLICAS` | **PR ➔ PR** | 5x R$ 12,00 (R$ 0,00) | **R$ 60,00** | R$ 10,80 | R$ 0,00 | R$ 0,00 | 🟢 OK | • ICMS (18% interno) = R$ 10,80<br>• PIS (Monofásico) = R$ 0,00<br>• COFINS (Monofásico) = R$ 0,00 |
-
----
-
-### 🔴 Grupo 2: Produtos com Impostos Incorretos (Esperado: Status `DIVERGENTE`)
-
-Estes produtos possuem divergências intencionais que a sua engine fiscal deve capturar e detalhar.
-
-| Código | Produto | Categoria | Origem ➔ Destino | Qtd x Val. Unit (Desc) | Base de Cálculo | ICMS Inf. | PIS Inf. | COFINS Inf. | Status Esperado | Divergência(s) que devem ser apontadas |
-| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **PROD-004** | Teclado Mecânico | `ELETRONICOS` | **PR ➔ RJ** | 1x R$ 100,00 (R$ 10,00) | **R$ 90,00** | **R$ 16,20** *(Erro)* | R$ 1,49 | R$ 6,84 | 🔴 ERRO | **Erro no ICMS:** Informou R$ 16,20 (18% interno), mas para PR ➔ RJ a alíquota correta é 12% (**R$ 10,80**). |
-| **PROD-005** | Arroz Integral 1kg | `CESTA_BASICA` | **PR ➔ PR** | 1x R$ 20,00 (R$ 0,00) | **R$ 20,00** | **R$ 3,60** *(Erro)* | R$ 0,33 | **R$ 0,00** *(Erro)* | 🔴 ERRO | **1. Erro no ICMS:** Cobrou 18% (R$ 3,60) para item de Cesta Básica (correto = **R$ 0,00**).<br>**2. Erro no COFINS:** Informou R$ 0,00 (correto = 7,60% = **R$ 1,52**). |
-| **PROD-006** | Vinho Tinto 750ml | `BEBIDAS_ALCOOLICAS` | **PR ➔ RJ** | 1x R$ 50,00 (R$ 0,00) | **R$ 50,00** | R$ 6,00 | **R$ 0,83** *(Erro)* | **R$ 3,80** *(Erro)* | 🔴 ERRO | **Erro em PIS/COFINS:** Bebidas alcoólicas no varejo são monofásicas (PIS e COFINS **devem ser R$ 0,00**), mas foram informadas alíquotas padrão. |
-
----
-
-## 📋 Especificação dos Endpoints
-
-### 1. Autenticação (`POST /api/auth/login`)
-
-**Exemplo de Requisição:**
-```json
-{
-  "email": "caixa01@erpvarejo.com",
-  "senha": "User@123"
-}
+# Execute a aplicacao
+mvn spring-boot:run
 ```
 
-**Exemplo de Resposta (200 OK):**
+A aplicacao estara disponivel em: `http://localhost:8080`
+
+### Endpoints
+
+| Metodo | URL | Descricao | Autenticacao |
+|--------|-----|-----------|--------------|
+| POST | /api/auth/login | Login e obter token JWT | Nao |
+| POST | /api/fiscal/validar-nota | Validar nota fiscal | Sim (Bearer token) |
+| GET | /swagger-ui.html | Documentacao Swagger | Nao |
+| GET | /h2-console | Console do banco H2 | Nao |
+
+## Credenciais
+
+| Usuario | Email | Senha | Permissao |
+|---------|-------|-------|-----------|
+| Admin ERP | admin@erpvarejo.com | Admin@123 | Acesso total |
+| Operador Caixa 01 | caixa01@erpvarejo.com | User@123 | Envio de notas |
+| Operador Caixa 02 | caixa02@erpvarejo.com | User@123 | Envio de notas |
+
+**Onde configurar:** `src/main/java/com/erpvarejo/config/DataInitializer.java`
+
+## Como Testar
+
+### 1. Fazer login
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "caixa01@erpvarejo.com", "senha": "User@123"}'
+```
+
+Resposta:
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
@@ -96,39 +81,77 @@ Estes produtos possuem divergências intencionais que a sua engine fiscal deve c
 }
 ```
 
----
+### 2. Validar nota fiscal (com impostos corretos)
 
-### 2. Validação Fiscal (`POST /api/fiscal/validar-nota`)
-* Requer Header: `Authorization: Bearer <TOKEN_JWT>`
+```bash
+curl -X POST http://localhost:8080/api/fiscal/validar-nota \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <SEU_TOKEN>" \
+  -d '{
+    "numeroNota": "NF-001",
+    "ufOrigem": "PR",
+    "ufDestino": "PR",
+    "itens": [
+      {
+        "codigoProduto": "PROD-003",
+        "nome": "Cerveja IPA 500ml",
+        "categoria": "BEBIDAS_ALCOOLICAS",
+        "quantidade": 5,
+        "valorUnitario": 12.00,
+        "desconto": 0.00,
+        "impostosInformados": {
+          "icms": 10.80,
+          "pis": 0.00,
+          "cofins": 0.00
+        }
+      }
+    ]
+  }'
+```
 
-**Exemplo de Requisição (Com Itens do Grupo 2 - Divergentes):**
+Resposta esperada (status APROVADA):
 ```json
 {
-  "numeroNota": "NF-1002",
-  "ufOrigem": "PR",
-  "ufDestino": "RJ",
-  "itens": [
-    {
-      "codigoProduto": "PROD-004",
-      "nome": "Teclado Mecânico",
-      "categoria": "ELETRONICOS",
-      "quantidade": 1,
-      "valorUnitario": 100.00,
-      "desconto": 10.00,
-      "impostosInformados": {
-        "icms": 16.20,
-        "pis": 1.49,
-        "cofins": 6.84
-      }
-    }
-  ]
+  "numeroNota": "NF-001",
+  "status": "APROVADA",
+  "valorTotalNota": 60.00,
+  "totalImpostosCalculados": 10.80,
+  "divergencias": []
 }
 ```
 
-**Exemplo de Resposta para Nota Divergente (200 OK):**
+### 3. Validar nota fiscal (com divergencias)
+
+```bash
+curl -X POST http://localhost:8080/api/fiscal/validar-nota \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <SEU_TOKEN>" \
+  -d '{
+    "numeroNota": "NF-002",
+    "ufOrigem": "PR",
+    "ufDestino": "RJ",
+    "itens": [
+      {
+        "codigoProduto": "PROD-004",
+        "nome": "Teclado Mecanico",
+        "categoria": "ELETRONICOS",
+        "quantidade": 1,
+        "valorUnitario": 100.00,
+        "desconto": 10.00,
+        "impostosInformados": {
+          "icms": 16.20,
+          "pis": 1.49,
+          "cofins": 6.84
+        }
+      }
+    ]
+  }'
+```
+
+Resposta esperada (status DIVERGENTE):
 ```json
 {
-  "numeroNota": "NF-1002",
+  "numeroNota": "NF-002",
   "status": "DIVERGENTE",
   "valorTotalNota": 90.00,
   "totalImpostosCalculados": 19.13,
@@ -138,38 +161,169 @@ Estes produtos possuem divergências intencionais que a sua engine fiscal deve c
       "imposto": "ICMS",
       "valorInformado": 16.20,
       "valorCorreto": 10.80,
-      "mensagem": "Divergência de ICMS: Operação interestadual (PR -> RJ) deve aplicar 12% sobre a base R$ 90,00."
+      "mensagem": "Divergencia de ICMS: Operacao interestadual (PR -> RJ) deve aplicar 12% sobre a base R$ 90,00."
     }
   ]
 }
 ```
 
----
+## Regras Fiscais
 
-## 🛠️ Requisitos Técnicos
+### ICMS
 
-* **Linguagem:** Java 17 ou superior.
-* **Framework:** Spring Boot 2.x ou superior (Spring Web, Spring Security, Spring Data JPA).
-* **Banco de Dados:** H2 Database (em memória) ou PostgreSQL/MySQL via Docker.
-* **Tipos de Dados:** Uso obrigatório de `BigDecimal` para cálculos financeiros/fiscais.
-* **Margem de Tolerância:** Aceitar variações de arredondamento de até **R$ 0,02** por imposto.
+| Condicao | Aliquota |
+|----------|----------|
+| Venda interna (mesmo estado) | 18% |
+| Venda interestadual (estados diferentes) | 12% |
+| Produto da categoria CESTA_BASICA | 0% (isento) |
 
----
+### PIS
 
-## 🧪 Diferenciais Valorizados
-* **Testes Unitários** 
-* **Swagger/OpenAPI** 
-* **Docker** 
-* **Design Patterns**
+| Condicao | Aliquota |
+|----------|----------|
+| Padrao | 1,65% |
+| Bebidas Alcoolicas (monofasico) | 0% |
 
----
+### COFINS
 
-## ⚖️ Critérios de Avaliação
+| Condicao | Aliquota |
+|----------|----------|
+| Padrao | 7,60% |
+| Bebidas Alcoolicas (monofasico) | 0% |
 
-1. **Arquitetura & Organização:** Separação clara de responsabilidades .
-2. **Qualidade de Código:** Práticas de Clean Code, SOLID.
-3. **Precisão Fiscal:** Cálculo exato de arredondamentos e aplicação das regras informadas.
-4. **Segurança:** Proteção dos endpoints com JWT.
-5. **Testabilidade:** Presença e clareza dos testes automatizados.
+### Base de Calculo
 
-Boa sorte!
+```
+Base de Calculo = (Quantidade x Valor Unitario) - Desconto
+Valor do Imposto = Base de Calculo x (Aliquota / 100)
+```
+
+### Margem de Tolerancia
+
+A API aceita variacoes de arredondamento de ate R$ 0,02 por imposto.
+
+**Onde configurar:** `src/main/java/com/erpvarejo/service/FiscalService.java` (constante `MARGEM_TOLERANCIA`)
+
+## Configuracoes
+
+### Porta do Servidor
+
+**Padrao:** 8080
+**Onde alterar:** `src/main/resources/application.properties`
+```properties
+server.port=8080
+```
+
+### Chave Secreta JWT
+
+**Onde alterar:** `src/main/resources/application.properties`
+```properties
+jwt.secret=SuaChaveSecretaAqui (minimo 32 caracteres)
+```
+
+### Expiracao do Token JWT
+
+**Padrao:** 86400000 ms (24 horas)
+**Onde alterar:** `src/main/resources/application.properties`
+```properties
+jwt.expiracao=86400000
+```
+
+### Banco de Dados H2
+
+**Onde alterar:** `src/main/resources/application.properties`
+```properties
+spring.datasource.url=jdbc:h2:mem:erpvarejo
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+```
+
+### CORS (Acesso Externo)
+
+**Onde alterar:** `src/main/java/com/erpvarejo/config/SecurityConfig.java`
+```java
+configuration.setAllowedOrigins(List.of("*"));  // Alterar para dominio especifico em producao
+```
+
+### Regras de Impostos
+
+**Onde alterar:** `src/main/java/com/erpvarejo/service/FiscalService.java`
+```java
+private static final BigDecimal ICMS_INTERNO = new BigDecimal("18");
+private static final BigDecimal ICMS_INTERESTADUAL = new BigDecimal("12");
+private static final BigDecimal PIS_PADRAO = new BigDecimal("1.65");
+private static final BigDecimal COFINS_PADRAO = new BigDecimal("7.60");
+```
+
+### Categorias de Produtos
+
+**Onde alterar:** `src/main/java/com/erpvarejo/enums/CategoriaProduto.java`
+```java
+public enum CategoriaProduto {
+    ELETRONICOS,
+    CESTA_BASICA,
+    BEBIDAS_ALCOOLICAS
+}
+```
+
+### Usuarios e Produtos Iniciais
+
+**Onde alterar:** `src/main/java/com/erpvarejo/config/DataInitializer.java`
+
+## Estrutura do Projeto
+
+```
+src/main/java/com/erpvarejo/
+├── ErpvarejoApplication.java    # Ponto de entrada
+├── config/
+│   ├── SecurityConfig.java      # Configuracao de seguranca
+│   ├── JwtAuthFilter.java       # Filtro de autenticacao JWT
+│   ├── SwaggerConfig.java       # Configuracao do Swagger
+│   └── DataInitializer.java     # Populacao de dados iniciais
+├── controller/
+│   ├── AuthController.java      # Endpoint de autenticacao
+│   └── FiscalController.java    # Endpoint de validacao fiscal
+├── dto/
+│   ├── LoginRequest.java        # Dados de entrada do login
+│   ├── LoginResponse.java       # Dados de saida do login
+│   ├── NotaFiscalRequest.java   # Dados de entrada da nota
+│   ├── NotaFiscalResponse.java  # Dados de saida da nota
+│   ├── ItemNotaRequest.java     # Dados de cada item
+│   ├── ImpostosInformados.java  # Impostos informados pelo usuario
+│   └── DivergenciaResponse.java # Divergencia encontrada
+├── enums/
+│   ├── CategoriaProduto.java    # Categorias de produto
+│   ├── Uf.java                  # Unidades federativas
+│   ├── StatusNota.java          # Status da nota
+│   └── RoleUsuario.java         # Roles de usuario
+├── exception/
+│   └── GlobalExceptionHandler.java  # Tratamento de excecoes
+├── model/
+│   ├── Usuario.java             # Entidade de usuario
+│   └── Produto.java             # Entidade de produto
+├── repository/
+│   ├── UsuarioRepository.java   # Acesso a dados de usuarios
+│   └── ProdutoRepository.java   # Acesso a dados de produtos
+└── service/
+    ├── AuthService.java         # Logica de autenticacao
+    └── FiscalService.java       # Logica de calculo de impostos
+```
+
+## Testes
+
+```bash
+# Executar todos os testes
+mvn test
+
+# Executar testes especificos
+mvn test -Dtest=FiscalServiceTest
+```
+
+## Observacoes Tecnicas
+
+- Senhas armazenadas com hash BCrypt
+- Tokens JWT com expiracao configuravel
+- Calculos financeiros usando BigDecimal
+- Arredondamento HALF_UP (padrao brasileiro)
+- Dados iniciais carregados via CommandLineRunner
+- H2 Console disponivel em `/h2-console` para inspecao do banco
