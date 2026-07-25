@@ -15,7 +15,7 @@ API RESTful para validacao fiscal de notas fiscais em sistema de ERP de varejo b
 | Tecnologia | Versao |
 |------------|--------|
 | Java | 17+ |
-| Maven | 3.9.6 |
+| Maven | 3.9.16 (via Maven Wrapper) |
 | Spring Boot | 3.2.5 |
 | Spring Security | 6.2.x (via Spring Boot) |
 | Spring Data JPA | 3.2.x (via Spring Boot) |
@@ -27,8 +27,18 @@ API RESTful para validacao fiscal de notas fiscais em sistema de ERP de varejo b
 
 ### Requisitos
 
-- Java 17 ou superior
-- Maven 3.6+
+- Java 17 ou superior (unico prerequisito)
+
+### Maven Wrapper
+
+O projeto utiliza **Maven Wrapper** (`./mvnw`), que garante que qualquer pessoa consiga buildar o projeto sem instalar Maven manualmente.
+
+- O wrapper baixa automaticamente o Maven 3.9.16 na primeira execucao
+- O Maven fica em cache em `~/.m2/wrapper/dists/` para execucoes seguintes
+- Elimina problemas de versao entre ambientes (dev, CI, producao)
+- **Nao e necessario ter Maven instalado na maquina** — so Java
+
+> **Windows:** Use `.\mvnw` no lugar de `./mvnw`
 
 ### Passo a passo
 
@@ -38,7 +48,7 @@ git clone https://github.com/kazuyabr/irrah-tech-challenges-fiscal.git
 cd irrah-tech-challenges-fiscal
 
 # Execute a aplicacao
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 A aplicacao estara disponivel em: `http://localhost:8080`
@@ -313,11 +323,13 @@ src/main/java/com/erpvarejo/
 
 ```bash
 # Executar todos os testes
-mvn test
+./mvnw test
 
 # Executar testes especificos
-mvn test -Dtest=FiscalServiceTest
+./mvnw test -Dtest=FiscalServiceTest
 ```
+
+A saida dos testes exibe `@DisplayName` descritivos para cada teste, facilitando a identificacao do que esta sendo validado.
 
 ## Observacoes Tecnicas
 
