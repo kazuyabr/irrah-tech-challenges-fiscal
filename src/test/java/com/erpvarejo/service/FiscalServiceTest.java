@@ -3,6 +3,7 @@ package com.erpvarejo.service;
 import com.erpvarejo.enums.CategoriaProduto;
 import com.erpvarejo.enums.Uf;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("FiscalService - Motor de Calculo de Impostos")
 class FiscalServiceTest {
 
     @Mock
@@ -32,6 +34,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular base de calculo com desconto")
     void deveCalcularBaseCalculoCorretamente() {
         BigDecimal resultado = fiscalService.calcularBaseCalculo(2, new BigDecimal("10.00"), new BigDecimal("1.00"));
 
@@ -39,6 +42,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular base de calculo sem desconto")
     void deveCalcularBaseCalculoSemDesconto() {
         BigDecimal resultado = fiscalService.calcularBaseCalculo(3, new BigDecimal("10.00"), BigDecimal.ZERO);
 
@@ -46,6 +50,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular ICMS interno (18%)")
     void deveCalcularIcmsInternoCorretamente() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularIcms(baseCalculo, Uf.PR, Uf.PR, CategoriaProduto.ELETRONICOS);
@@ -54,6 +59,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular ICMS interestadual (12%)")
     void deveCalcularIcmsInterestadualCorretamente() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularIcms(baseCalculo, Uf.PR, Uf.RJ, CategoriaProduto.ELETRONICOS);
@@ -62,6 +68,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular ICMS cesta basica (isento)")
     void deveCalcularIcmsCestaBasicaIsento() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularIcms(baseCalculo, Uf.PR, Uf.PR, CategoriaProduto.CESTA_BASICA);
@@ -70,6 +77,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular PIS padrao (1,65%)")
     void deveCalcularPisCorretamente() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularPis(baseCalculo, CategoriaProduto.ELETRONICOS);
@@ -78,6 +86,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular PIS bebida alcoolica (0%)")
     void deveCalcularPisBebidaAlcoolicaZerado() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularPis(baseCalculo, CategoriaProduto.BEBIDAS_ALCOOLICAS);
@@ -86,6 +95,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular COFINS padrao (7,60%)")
     void deveCalcularCofinsCorretamente() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularCofins(baseCalculo, CategoriaProduto.ELETRONICOS);
@@ -94,6 +104,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Deve calcular COFINS bebida alcoolica (0%)")
     void deveCalcularCofinsBebidaAlcoolicaZerado() {
         BigDecimal baseCalculo = new BigDecimal("100.00");
         BigDecimal resultado = fiscalService.calcularCofins(baseCalculo, CategoriaProduto.BEBIDAS_ALCOOLICAS);
@@ -102,6 +113,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Grupo 1 - PROD-001 Mouse USB: Venda interestadual PR->RJ com impostos corretos - APROVADA")
     void deveCalcularImpostosProdutoCorreto() {
         Produto produto = new Produto("PROD-001", "Mouse USB", CategoriaProduto.ELETRONICOS, new BigDecimal("10.00"));
         when(produtoRepository.findByCodigo("PROD-001")).thenReturn(Optional.of(produto));
@@ -134,6 +146,7 @@ class FiscalServiceTest {
     }
 
     @Test
+    @DisplayName("Grupo 2 - PROD-004 Teclado Mecanico: Divergencia ICMS 18% vs 12% - DIVERGENTE")
     void deveDetectarDivergenciaIcms() {
         Produto produto = new Produto("PROD-004", "Teclado Mecanico", CategoriaProduto.ELETRONICOS, new BigDecimal("100.00"));
         when(produtoRepository.findByCodigo("PROD-004")).thenReturn(Optional.of(produto));
