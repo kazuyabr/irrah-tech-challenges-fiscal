@@ -51,7 +51,7 @@ cd irrah-tech-challenges-fiscal
 ./mvnw spring-boot:run
 ```
 
-A aplicacao estara disponivel em: `http://localhost:8000`
+A aplicacao estara disponivel em: `http://localhost:8080`
 
 ### Endpoints
 
